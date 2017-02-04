@@ -64,7 +64,7 @@ for example `-ext .foo` (include the dot, unless there really is none).
 ### Throttling
 
 wikipush will wait half a second between each upload attempt. If you'd like to
-increase/decrease the duration, use the `-pause` flag. You can speficy values 
+increase/decrease the duration, use the `-pause` flag. You can specify values 
 like `-pause 0`, `-pause 100ms`, `-pause 2s`, `-pause 5m` etc.
 
 ### Revision history
