@@ -142,8 +142,6 @@ func main() {
 		} else {
 			remote := page.Revisions[0].Body
 
-			log.Printf("Number of revisions: %d\n", len(page.Revisions))
-
 			if strings.TrimSpace(string(local)) == strings.TrimSpace(remote) {
 				log.Printf("Skipped \"%s\", because it's already in the wiki.\n", title)
 
