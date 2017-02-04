@@ -1,6 +1,6 @@
 # wikipush
 
-Bulk Uploads files into a MediaWiki wiki using the MediaWiki API.
+Bulk upload files into a MediaWiki wiki using the MediaWiki API.
 
 Uses [go-mediawiki](https://github.com/sadbox/mediawiki/) by
 [sadbox](https://github.com/sadbox/).
