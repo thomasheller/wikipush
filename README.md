@@ -1,5 +1,7 @@
 # wikipush
 
+[![Go Report Card](https://goreportcard.com/badge/github.com/thomasheller/wikipush)](https://goreportcard.com/report/github.com/thomasheller/wikipush)
+
 Bulk upload files into a MediaWiki wiki using the MediaWiki API.
 
 Uses [go-mediawiki](https://github.com/sadbox/mediawiki/) by
