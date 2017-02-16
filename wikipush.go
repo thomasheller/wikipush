@@ -13,23 +13,33 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sadbox/mediawiki"
+	mw "github.com/sadbox/mediawiki"
+)
+
+const (
+	doneDir = "done"
+	dupeDir = "dupes"
+	skipDir = "skipped"
+)
+
+var (
+	extension string
+	pause     time.Duration
+	summary   string
+
+	doneCount, dupeCount, skipCount, errCount, moveErrCount int
 )
 
 func main() {
-	const doneDir = "done"
-	const dupeDir = "dupes"
-	const skipDir = "skipped"
-
 	run := flag.Bool("run", false, "actually perform the upload")
-	extension := flag.String("ext", ".txt", "file extension (including dot)")
 	url := flag.String("url", "", "API url (typically http://.../w/api.php)")
-	pause := flag.Duration("pause", 500*time.Millisecond, "wait time between uploads")
-	summary := flag.String("summary", "Bulk upload by wikipush", "message for the revision log")
+	flag.StringVar(&extension, "ext", ".txt", "file extension (including dot)")
+	flag.DurationVar(&pause, "pause", 500*time.Millisecond, "wait time between uploads")
+	flag.StringVar(&summary, "summary", "Bulk upload by wikipush", "message for the revision log")
 
 	flag.Parse()
 
-	files, err := filepath.Glob("*" + *extension)
+	files, err := filepath.Glob("*" + extension)
 	if err != nil {
 		log.Fatalf("Error reading filenames: %s", err)
 	}
@@ -55,7 +65,7 @@ func main() {
 	checkDir(dupeDir, "duplicates")
 	checkDir(skipDir, "skipped")
 
-	client, err := mediawiki.New(*url, "wikipush")
+	client, err := mw.New(*url, "wikipush")
 
 	if err != nil {
 		log.Fatalf("Error connecting to MediaWiki: %s\n", err)
@@ -87,12 +97,24 @@ func main() {
 
 	fmt.Printf("%d files will be uploaded.\n", len(files))
 
-	duration := *pause * time.Duration(len(files))
+	duration := pause * time.Duration(len(files))
 
 	fmt.Printf("This will take at least %s with the current throttle setting.\n", duration)
 
-	var doneCount, dupeCount, skipCount, errCount, moveErrCount int
+	push(client, files)
 
+	fmt.Println("Done.")
+	fmt.Printf("Out of %d files,\n", len(files))
+	fmt.Printf("%d were uploaded successfully (see %s directory),\n", doneCount, doneDir)
+	fmt.Printf("%d were skipped because a page with different content already existed (see %s directory),\n", dupeCount, dupeDir)
+	fmt.Printf("%d were skipped because they were alreay in the wiki (see %s directory).\n", skipCount, skipDir)
+	fmt.Printf("%d couldn't be processed because of errors.\n", errCount)
+	if moveErrCount > 0 {
+		fmt.Printf("Additionally, %d files couldn't be moved into the correct directory after they were processed.\n", moveErrCount)
+	}
+}
+
+func push(client *mw.MWApi, files []string) {
 	for _, file := range files {
 		local, err := ioutil.ReadFile(file)
 
@@ -102,9 +124,9 @@ func main() {
 			continue
 		}
 
-		title := strings.TrimSuffix(file, *extension)
+		title := strings.TrimSuffix(file, extension)
 
-		time.Sleep(*pause)
+		time.Sleep(pause)
 
 		page, err := client.Read(title)
 
@@ -117,7 +139,7 @@ func main() {
 		if len(page.Revisions) == 0 {
 			edit := map[string]string{
 				"title":   title,
-				"summary": *summary,
+				"summary": summary,
 				"text":    string(local),
 			}
 
@@ -168,16 +190,6 @@ func main() {
 
 			}
 		}
-	}
-
-	fmt.Println("Done.")
-	fmt.Printf("Out of %d files,\n", len(files))
-	fmt.Printf("%d were uploaded successfully (see %s directory),\n", doneCount, doneDir)
-	fmt.Printf("%d were skipped because a page with different content already existed (see %s directory),\n", dupeCount, dupeDir)
-	fmt.Printf("%d were skipped because they were alreay in the wiki (see %s directory).\n", skipCount, skipDir)
-	fmt.Printf("%d couldn't be processed because of errors.\n", errCount)
-	if moveErrCount > 0 {
-		fmt.Printf("Additionally, %d files couldn't be moved into the correct directory after they were processed.\n", moveErrCount)
 	}
 }
 
